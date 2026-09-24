@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package storage.rpc;
+
+enum StatusCode {
+  STATUS_CODE_OK = 0;
+  STATUS_CODE_UNAVAILABLE = 1;
+  STATUS_CODE_INTERNAL = 2;
+}
+
+message Status {
+  StatusCode code = 1;
+  string message = 2;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  Status status = 1;
+  string service = 2;
+}
+

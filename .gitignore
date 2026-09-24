@@ -1,0 +1,8 @@
+/build/
+/build-*/
+/out/
+.cache/
+.vscode/
+compile_commands.json
+third_party/vcpkg/
+

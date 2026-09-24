@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package storage.rpc;
+
+import "common.proto";
+
+service WorkerRpc {
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
