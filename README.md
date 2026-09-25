@@ -1,12 +1,12 @@
 # Storage
 
 Storage is a C++20 distributed, tiered-cache and data-placement project for large immutable
-artifacts such as models, datasets, and checkpoints. The repository is currently at **V0: project
-baseline**.
+artifacts such as models, datasets, and checkpoints. The repository is currently at **V1: single
+worker storage path**.
 
-V0 supplies common types, process scaffolding, and real gRPC health communication among a control
-plane, worker, and client. It intentionally does not implement Put/Get, chunk storage, ReadPlan,
-placement, replication, cache tiers, or management-plane services.
+V1 adds an immutable, streaming Put/Get/Head/Delete path from the CLI through gRPC to an ext4-backed
+worker. V1 intentionally remains one object per chunk and one configured worker; placement,
+replication, ReadPlan, and cache tiers begin in later stages.
 
 ## Requirements
 
@@ -39,21 +39,31 @@ The sanitized test preset disables ASan's optional user-poisoning API because th
 release uses manual stack poisoning internally during server shutdown. Address and undefined
 behavior instrumentation remain enabled for all project targets.
 
-Release presets are `release` and `bench-release`. The latter only validates the future benchmark
-build configuration in V0; V0 contains no performance benchmark.
+Release presets are `release` and `bench-release`. Run the V1 baseline with:
+
+```bash
+./benchmarks/v1-single-worker/run.sh
+```
 
 ## Programs
 
 ```bash
 ./build/debug/control-plane
-./build/debug/worker
-./build/debug/client
+./build/debug/worker --storage-root ./worker-data
+./build/debug/client put demo-object ./source.bin
+./build/debug/client head demo-object
+./build/debug/client get demo-object ./download.bin
+./build/debug/client delete demo-object
 ```
 
-The default endpoints are `127.0.0.1:50051` and `127.0.0.1:50052`. Addresses can be overridden by
-`--listen`, `--control`, and `--worker`. The integration test performs genuine in-process-server,
-loopback gRPC calls and can be run directly with:
+The worker defaults to `127.0.0.1:50052`; override it with worker `--listen` and client `--worker`.
+The integration tests perform genuine loopback gRPC streaming for 1 MiB and 64 MiB files:
 
 ```bash
-ctest --test-dir build/debug -R RpcSmokeTest --output-on-failure
+ctest --test-dir build/debug -R 'RpcSmokeTest|SingleWorkerTest' --output-on-failure
 ```
+
+Chunk IDs are encoded before becoming filenames. A chunk is committed with no-replace semantics
+only after its byte count and BLAKE3 checksum pass and its temporary file is synchronized. The
+persisted file header keeps size and checksum available after a worker restart. Both disk and RPC
+paths use fixed-size buffers; large objects are never loaded wholly into memory.

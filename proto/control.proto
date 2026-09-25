@@ -1,10 +1,25 @@
 syntax = "proto3";
 
+// 当前 proto 文件同样属于 storage.rpc 包。
+// 因此它和 common.proto 中的类型处于同一个 protobuf package 中。
 package storage.rpc;
 
+
+// 导入 common.proto。
+// 因为下面的 ControlPlaneRpc 会使用：
+// HealthRequest
+// HealthResponse
 import "common.proto";
 
+// 定义 Control Plane 对外提供的 gRPC 服务。
+// protobuf 本身主要负责消息定义；
+// service + rpc 描述的是 gRPC 服务接口。
 service ControlPlaneRpc {
+
+  // 定义一个名为 Health 的 RPC 方法。
+  //
+  // 请求类型：HealthRequest
+  // 返回类型：HealthResponse
   rpc Health(HealthRequest) returns (HealthResponse);
 }
 

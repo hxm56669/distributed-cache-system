@@ -6,5 +6,40 @@ import "common.proto";
 
 service WorkerRpc {
   rpc Health(HealthRequest) returns (HealthResponse);
+  rpc PutChunk(stream PutChunkFrame) returns (OperationResponse);
+  rpc GetChunk(GetChunkRequest) returns (stream ChunkData);
+  rpc HeadChunk(HeadChunkRequest) returns (HeadChunkResponse);
+  rpc DeleteChunk(DeleteChunkRequest) returns (OperationResponse);
 }
 
+message PutChunkMetadata {
+  string chunk_id = 1;
+  uint64 expected_size = 2;
+  string expected_checksum = 3;
+}
+
+message PutChunkFrame {
+  oneof payload {
+    PutChunkMetadata metadata = 1;
+    bytes data = 2;
+  }
+}
+
+message GetChunkRequest {
+  string chunk_id = 1;
+  uint64 offset = 2;
+  uint64 size = 3;
+}
+
+message ChunkData { bytes data = 1; }
+message HeadChunkRequest { string chunk_id = 1; }
+message DeleteChunkRequest { string chunk_id = 1; }
+
+message HeadChunkResponse {
+  Status status = 1;
+  string chunk_id = 2;
+  uint64 size = 3;
+  string checksum = 4;
+}
+
+message OperationResponse { Status status = 1; }

@@ -1,6 +1,8 @@
 #include "storage/common/config.h"
 #include "storage/common/logging.h"
 #include "storage/rpc/services.h"
+#include "storage/storage/worker/data_plane_service.h"
+#include "storage/storage/worker/file_chunk_store.h"
 
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -19,7 +21,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    storage::WorkerService service;
+    storage::FileChunkStore chunk_store(config.value().storage_root);
+    storage::DataPlaneService data_plane(chunk_store);
+    storage::WorkerService service(data_plane);
     grpc::ServerBuilder builder;
     builder.AddListeningPort(config.value().listen_address, grpc::InsecureServerCredentials());
     builder.RegisterService(&service);
@@ -30,6 +34,7 @@ int main(int argc, char *argv[]) {
     }
     spdlog::info("worker {} listening on {}", config.value().worker_id.value,
                  config.value().listen_address);
+    spdlog::info("worker storage root: {}", config.value().storage_root.string());
     server->Wait();
     return 0;
 }

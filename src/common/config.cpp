@@ -3,11 +3,15 @@
 #include <string_view>
 
 namespace storage {
+     // 匿名命名空间：下面的辅助函数只允许在当前 config.cpp 内部使用
 namespace {
 
 StatusOr<std::string> ReadOption(int argc, char *argv[], std::string_view option,
                                  std::string default_value) {
+    // 从 1 开始遍历，因为 argv[0] 是程序自己的名称。
     for (int index = 1; index < argc; ++index) {
+        // 把当前 argv[index] 包装成 string_view。
+        // 不复制字符串，只是查看原始字符。
         const std::string_view argument(argv[index]);
         const std::string prefix = std::string(option) + "=";
         if (argument.starts_with(prefix)) {
@@ -48,7 +52,12 @@ StatusOr<WorkerConfig> LoadWorkerConfig(int argc, char *argv[]) {
     if (!worker_id.ok()) {
         return worker_id.status();
     }
-    return WorkerConfig{WorkerId{std::move(worker_id).value()}, std::move(address).value()};
+    auto storage_root = ReadOption(argc, argv, "--storage-root", "./worker-data");
+    if (!storage_root.ok()) {
+        return storage_root.status();
+    }
+    return WorkerConfig{WorkerId{std::move(worker_id).value()}, std::move(address).value(),
+                        std::filesystem::path(std::move(storage_root).value())};
 }
 
 StatusOr<ClientConfig> LoadClientConfig(int argc, char *argv[]) {

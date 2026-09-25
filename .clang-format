@@ -1,4 +1,8 @@
+# 基于 LLVM 官方代码格式作为基础风格
 BasedOnStyle: LLVM
-IndentWidth: 4
-ColumnLimit: 100
 
+# 每一级缩进使用 4 个空格
+IndentWidth: 4
+
+# 每行代码最大长度为 100 个字符，超过后 clang-format 会尝试自动换行
+ColumnLimit: 100

@@ -1,22 +1,40 @@
+// 指定当前 Protocol Buffers 使用 proto3 语法。
+// 每个 .proto 文件基本都需要声明，并且通常写在文件最前面。
+
 syntax = "proto3";
 
+// 定义 protobuf 的包名。
+// 作用类似于 C++ 的 namespace，用来避免不同 proto 中消息、枚举重名。
+// 后续生成的 RPC 类型逻辑上都属于 storage.rpc。
 package storage.rpc;
 
+// 定义 RPC 层使用的状态码。
+// 注意：这是“网络协议中的状态码”，不是 C++ 项目内部的 storage::StatusCode。
 enum StatusCode {
-  STATUS_CODE_OK = 0;
-  STATUS_CODE_UNAVAILABLE = 1;
-  STATUS_CODE_INTERNAL = 2;
+  STATUS_CODE_OK = 0;  // proto3 中枚举的第一个值必须是 0，
+  STATUS_CODE_INVALID_ARGUMENT = 1;
+  STATUS_CODE_NOT_FOUND = 2;
+  STATUS_CODE_ALREADY_EXISTS = 3;
+  STATUS_CODE_UNAVAILABLE = 4;
+  STATUS_CODE_TIMEOUT = 5;
+  STATUS_CODE_IO_ERROR = 6;
+  STATUS_CODE_CORRUPTION = 7;
+  STATUS_CODE_RESOURCE_EXHAUSTED = 8;
+  STATUS_CODE_INTERNAL = 9;
 }
 
+// 定义一个可以通过 protobuf 传输的状态对象。
+// 用于把“成功/失败 + 错误信息”从服务端传给客户端
 message Status {
   StatusCode code = 1;
   string message = 2;
 }
 
+// Health RPC 的请求消息。
 message HealthRequest {}
 
+// Health RPC 的响应消息。
 message HealthResponse {
   Status status = 1;
   string service = 2;
 }
-

@@ -4,6 +4,7 @@
 #include "storage/storage/types/worker_id.h"
 
 #include <string>
+#include <filesystem>
 
 namespace storage {
 
@@ -14,6 +15,7 @@ struct ControlConfig {
 struct WorkerConfig {
     WorkerId worker_id{"worker-v0"};
     std::string listen_address{"127.0.0.1:50052"};
+    std::filesystem::path storage_root{"./worker-data"};
 };
 
 struct ClientConfig {
