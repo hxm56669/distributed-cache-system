@@ -32,6 +32,7 @@ find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(blake3 CONFIG REQUIRED)
+find_package(CLI11 CONFIG REQUIRED)
 
 # 定义一个列表 PROTO_FILES。
 # 保存本项目需要编译的所有 protobuf 协议文件。
@@ -89,7 +90,7 @@ add_library(storage_common
     src/storage/types/byte_range.cpp
     src/storage/types/checksum.cpp)
 target_include_directories(storage_common PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(storage_common PUBLIC spdlog::spdlog)
+target_link_libraries(storage_common PUBLIC spdlog::spdlog CLI11::CLI11)
 storage_set_project_options(storage_common)
 
 add_library(storage_data_plane
@@ -115,7 +116,7 @@ target_link_libraries(worker PRIVATE storage_rpc)
 storage_set_project_options(worker)
 
 add_executable(client src/client/client_main.cpp)
-target_link_libraries(client PRIVATE storage_rpc)
+target_link_libraries(client PRIVATE storage_rpc CLI11::CLI11)
 storage_set_project_options(client)
 
 if(STORAGE_BUILD_TESTS)
@@ -144,4 +145,9 @@ if(STORAGE_BUILD_TESTS)
     gtest_discover_tests(storage_unit_tests)
     gtest_discover_tests(rpc_smoke_test)
     gtest_discover_tests(single_worker_put_get_test)
+    add_test(
+        NAME SingleWorkerCliE2E
+        COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/single_worker_cli_test.sh"
+                $<TARGET_FILE:worker> $<TARGET_FILE:client>)
+    set_tests_properties(SingleWorkerCliE2E PROPERTIES TIMEOUT 60)
 endif()

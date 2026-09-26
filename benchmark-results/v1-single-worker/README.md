@@ -14,6 +14,6 @@
 - Get includes download, destination `fdatasync`, BLAKE3 verification, and commit
 
 Raw measurements are in `results.csv`. This is a functional V1 baseline from a single VM, not a
-multi-machine performance claim. The largest observed client RSS in the final run was 642,180 KiB
+multi-machine performance claim. The largest observed client RSS in the final run was 273,108 KiB
 for a 5 GiB Get; the data path uses fixed 3 MiB application buffers and a 256 MiB gRPC resource
 quota and never allocates an object-sized buffer.

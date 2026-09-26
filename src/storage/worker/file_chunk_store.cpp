@@ -103,8 +103,9 @@ StatusOr<HeadChunkResponse> ReadHeader(int fd, const ChunkId &chunk_id) {
     if (::fstat(fd, &file_stat) != 0) {
         return Status{StatusCode::kIoError, "fstat failed: " + std::string(std::strerror(errno))};
     }
-    if (file_stat.st_size < 0 || static_cast<std::uint64_t>(file_stat.st_size) !=
-                                     size + static_cast<std::uint64_t>(kHeaderSize)) {
+    if (size > std::numeric_limits<std::uint64_t>::max() - kHeaderSize || file_stat.st_size < 0 ||
+        static_cast<std::uint64_t>(file_stat.st_size) !=
+            size + static_cast<std::uint64_t>(kHeaderSize)) {
         return Status{StatusCode::kCorruption, "chunk file size does not match header"};
     }
     return HeadChunkResponse{chunk_id, size, std::move(checksum)};

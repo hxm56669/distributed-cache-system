@@ -10,7 +10,9 @@
 namespace storage {
 
 struct WorkerEndpoint {
-    std::string address;
+    std::string host;
+    std::uint16_t control_port;
+    std::uint16_t data_port;
 };
 struct PutChunkRequest {
     ChunkId chunk_id;

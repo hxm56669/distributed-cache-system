@@ -7,12 +7,14 @@
 #include <unistd.h>
 
 #include <array>
+#include <atomic>
 #include <cerrno>
 #include <cstring>
 
 namespace storage {
 namespace {
 constexpr std::size_t kBufferSize = 1024 * 1024;
+std::atomic<std::uint64_t> next_temp_id{0};
 
 StatusOr<std::pair<std::uint64_t, Checksum>> HashFile(const std::filesystem::path &path) {
     UniqueFd fd(::open(path.c_str(), O_RDONLY | O_CLOEXEC));
@@ -76,7 +78,8 @@ Status StorageClient::Get(const ObjectId &object_id, const std::filesystem::path
     if (!head.ok())
         return head.status();
     const auto temp = destination.parent_path() /
-                      (destination.filename().string() + ".tmp." + std::to_string(::getpid()));
+                      (destination.filename().string() + ".tmp." + std::to_string(::getpid()) +
+                       "." + std::to_string(next_temp_id.fetch_add(1, std::memory_order_relaxed)));
     if (std::filesystem::exists(temp))
         return {StatusCode::kAlreadyExists,
                 "temporary destination already exists: " + temp.string()};

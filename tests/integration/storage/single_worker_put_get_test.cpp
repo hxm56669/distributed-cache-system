@@ -77,7 +77,9 @@ TEST_P(SingleWorkerTest, PutHeadGetDeleteOverGrpc) {
     const auto destination = root / "destination.bin";
     WritePattern(source, GetParam());
     GrpcDataPlaneClient data_client;
-    StorageClient client(data_client, WorkerEndpoint{"127.0.0.1:" + std::to_string(port)});
+    const WorkerEndpoint endpoint{"127.0.0.1", static_cast<std::uint16_t>(port),
+                                  static_cast<std::uint16_t>(port)};
+    StorageClient client(data_client, endpoint);
     const ObjectId id{"integration-" + std::to_string(GetParam())};
     ASSERT_TRUE(client.Put(id, source).ok());
     auto head = client.Head(id);
@@ -99,6 +101,18 @@ TEST_P(SingleWorkerTest, PutHeadGetDeleteOverGrpc) {
     const auto corrupt_destination = root / "corrupt-download.bin";
     EXPECT_EQ(client.Get(id, corrupt_destination).code(), StatusCode::kCorruption);
     EXPECT_FALSE(std::filesystem::exists(corrupt_destination));
+
+    std::fstream corrupt_header(chunk_file.path(), std::ios::binary | std::ios::in | std::ios::out);
+    corrupt_header.seekp(0);
+    corrupt_header.put('\0');
+    corrupt_header.close();
+    const auto corrupt_header_destination = root / "corrupt-header.bin";
+    EXPECT_EQ(data_client
+                  .GetChunk(endpoint, GetChunkRequest{ChunkId{id.value}, ByteRange{0, GetParam()}},
+                            corrupt_header_destination)
+                  .code(),
+              StatusCode::kCorruption);
+    EXPECT_FALSE(std::filesystem::exists(corrupt_header_destination));
 
     ASSERT_TRUE(client.Delete(id).ok());
     EXPECT_EQ(client.Head(id).status().code(), StatusCode::kNotFound);

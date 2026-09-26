@@ -78,8 +78,10 @@ grpc::Status ToGrpcStatus(const Status &status) {
     case StatusCode::kResourceExhausted:
         code = grpc::StatusCode::RESOURCE_EXHAUSTED;
         break;
-    case StatusCode::kIoError:
     case StatusCode::kCorruption:
+        code = grpc::StatusCode::DATA_LOSS;
+        break;
+    case StatusCode::kIoError:
     case StatusCode::kInternal:
         code = grpc::StatusCode::INTERNAL;
         break;

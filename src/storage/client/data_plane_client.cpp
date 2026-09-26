@@ -74,6 +74,9 @@ Status FromGrpcStatus(const grpc::Status &status) {
     case grpc::StatusCode::RESOURCE_EXHAUSTED:
         code = StatusCode::kResourceExhausted;
         break;
+    case grpc::StatusCode::DATA_LOSS:
+        code = StatusCode::kCorruption;
+        break;
     case grpc::StatusCode::INTERNAL:
         code = StatusCode::kInternal;
         break;
@@ -88,8 +91,9 @@ std::unique_ptr<rpc::WorkerRpc::Stub> MakeStub(const WorkerEndpoint &endpoint) {
     quota.Resize(256 * 1024 * 1024);
     grpc::ChannelArguments arguments;
     arguments.SetResourceQuota(quota);
-    return rpc::WorkerRpc::NewStub(grpc::CreateCustomChannel(
-        endpoint.address, grpc::InsecureChannelCredentials(), arguments));
+    return rpc::WorkerRpc::NewStub(
+        grpc::CreateCustomChannel(endpoint.host + ":" + std::to_string(endpoint.data_port),
+                                  grpc::InsecureChannelCredentials(), arguments));
 }
 
 Status WriteAll(int fd, const char *data, std::size_t size) {
@@ -161,6 +165,11 @@ Status GrpcDataPlaneClient::GetChunk(const WorkerEndpoint &endpoint, const GetCh
         return {errno == EEXIST ? StatusCode::kAlreadyExists : StatusCode::kIoError,
                 "create destination failed: " + std::string(std::strerror(errno))};
     }
+    const auto fail = [&](Status status) {
+        fd.reset();
+        (void)::unlink(destination.c_str());
+        return status;
+    };
     auto stub = MakeStub(endpoint);
     grpc::ClientContext context;
     context.set_deadline(std::chrono::system_clock::now() + deadline_);
@@ -180,12 +189,12 @@ Status GrpcDataPlaneClient::GetChunk(const WorkerEndpoint &endpoint, const GetCh
     }
     const auto grpc_status = reader->Finish();
     if (!write_status.ok())
-        return write_status;
+        return fail(write_status);
     if (!grpc_status.ok())
-        return FromGrpcStatus(grpc_status);
+        return fail(FromGrpcStatus(grpc_status));
     if (::fdatasync(fd.get()) != 0) {
-        return {StatusCode::kIoError,
-                "fdatasync destination failed: " + std::string(std::strerror(errno))};
+        return fail({StatusCode::kIoError,
+                     "fdatasync destination failed: " + std::string(std::strerror(errno))});
     }
     return Status::Ok();
 }

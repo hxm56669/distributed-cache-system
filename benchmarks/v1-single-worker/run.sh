@@ -31,20 +31,20 @@ for size in $sizes; do
     truncate -s "$size" "$source_file"
 
     /usr/bin/time -f "%e,%M,%P" -o "$work_dir/time.txt" \
-        "$build_dir/client" --worker 127.0.0.1:50153 put "$object_id" "$source_file"
+        "$build_dir/client" --worker-data-port 50153 put "$object_id" "$source_file"
     IFS=, read -r wall rss cpu <"$work_dir/time.txt"
     throughput=$(awk -v bytes="$size" -v seconds="$wall" \
         'BEGIN { if (seconds == 0) seconds = 0.001; printf "%.2f", bytes / 1048576 / seconds }')
     echo "$size,put,$wall,$throughput,$rss,$cpu" >>"$output"
 
     /usr/bin/time -f "%e,%M,%P" -o "$work_dir/time.txt" \
-        "$build_dir/client" --worker 127.0.0.1:50153 get "$object_id" "$destination_file"
+        "$build_dir/client" --worker-data-port 50153 get "$object_id" "$destination_file"
     IFS=, read -r wall rss cpu <"$work_dir/time.txt"
     throughput=$(awk -v bytes="$size" -v seconds="$wall" \
         'BEGIN { if (seconds == 0) seconds = 0.001; printf "%.2f", bytes / 1048576 / seconds }')
     echo "$size,get,$wall,$throughput,$rss,$cpu" >>"$output"
 
     cmp "$source_file" "$destination_file"
-    "$build_dir/client" --worker 127.0.0.1:50153 delete "$object_id"
+    "$build_dir/client" --worker-data-port 50153 delete "$object_id"
     rm -f "$source_file" "$destination_file"
 done

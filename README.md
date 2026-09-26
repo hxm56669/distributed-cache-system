@@ -50,18 +50,23 @@ Release presets are `release` and `bench-release`. Run the V1 baseline with:
 ```bash
 ./build/debug/control-plane
 ./build/debug/worker --storage-root ./worker-data
-./build/debug/client put demo-object ./source.bin
-./build/debug/client head demo-object
-./build/debug/client get demo-object ./download.bin
-./build/debug/client delete demo-object
+./build/debug/client --worker-data-port 50052 put demo-object ./source.bin
+./build/debug/client --worker-data-port 50052 head demo-object
+./build/debug/client --worker-data-port 50052 get demo-object ./download.bin
+./build/debug/client --worker-data-port 50052 delete demo-object
 ```
 
-The worker defaults to `127.0.0.1:50052`; override it with worker `--listen` and client `--worker`.
+The worker defaults to `127.0.0.1:50052`; override it with worker `--listen` and client
+`--worker-host`, `--worker-control-port`, and `--worker-data-port`. V1 uses the same port for both
+roles, while the endpoint contract already preserves their separation for V2.
 The integration tests perform genuine loopback gRPC streaming for 1 MiB and 64 MiB files:
 
 ```bash
 ctest --test-dir build/debug -R 'RpcSmokeTest|SingleWorkerTest' --output-on-failure
 ```
+
+CTest also includes an 8 MiB `SingleWorkerCliE2E` that launches the real worker and client
+executables. Command-line parsing for control-plane, worker, and client uses CLI11.
 
 Chunk IDs are encoded before becoming filenames. A chunk is committed with no-replace semantics
 only after its byte count and BLAKE3 checksum pass and its temporary file is synchronized. The
