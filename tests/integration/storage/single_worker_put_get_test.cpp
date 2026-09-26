@@ -94,6 +94,17 @@ TEST_P(SingleWorkerTest, PutHeadGetDeleteOverGrpc) {
     EXPECT_EQ(std::filesystem::file_size(existing), 1);
 
     const auto chunk_file = *std::filesystem::directory_iterator(root / "chunks");
+    std::filesystem::permissions(chunk_file.path(), std::filesystem::perms::none);
+    const auto io_error_destination = root / "io-error.bin";
+    EXPECT_EQ(data_client
+                  .GetChunk(endpoint, GetChunkRequest{ChunkId{id.value}, ByteRange{0, GetParam()}},
+                            io_error_destination)
+                  .code(),
+              StatusCode::kIoError);
+    EXPECT_FALSE(std::filesystem::exists(io_error_destination));
+    std::filesystem::permissions(chunk_file.path(), std::filesystem::perms::owner_read |
+                                                        std::filesystem::perms::owner_write);
+
     std::fstream corrupt(chunk_file.path(), std::ios::binary | std::ios::in | std::ios::out);
     corrupt.seekp(80);
     corrupt.put('\x7f');

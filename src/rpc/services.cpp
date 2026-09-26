@@ -82,6 +82,8 @@ grpc::Status ToGrpcStatus(const Status &status) {
         code = grpc::StatusCode::DATA_LOSS;
         break;
     case StatusCode::kIoError:
+        code = grpc::StatusCode::UNKNOWN;
+        break;
     case StatusCode::kInternal:
         code = grpc::StatusCode::INTERNAL;
         break;

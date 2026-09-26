@@ -77,6 +77,9 @@ Status FromGrpcStatus(const grpc::Status &status) {
     case grpc::StatusCode::DATA_LOSS:
         code = StatusCode::kCorruption;
         break;
+    case grpc::StatusCode::UNKNOWN:
+        code = StatusCode::kIoError;
+        break;
     case grpc::StatusCode::INTERNAL:
         code = StatusCode::kInternal;
         break;
